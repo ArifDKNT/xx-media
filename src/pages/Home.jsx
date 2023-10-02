@@ -1,19 +1,20 @@
 import React from 'react'
 import { useState } from 'react';
 import { useSelector } from 'react-redux'
-import { TopBar, ProfileCard, FriendsCard, CustomButton, TextInput } from '../components';
-import { friends, requests, suggest } from '../assets/data';
+import { TopBar, ProfileCard, FriendsCard, CustomButton, TextInput , Loading , PostCard } from '../components';
+import { friends, requests, suggest , posts } from '../assets/data';
 import { NoProfile } from '../assets';
 import { Link } from 'react-router-dom';
 import { BsFiletypeGif, BsPersonFillAdd } from 'react-icons/bs';
 import { useForm } from "react-hook-form";
 import {BiImages, BiSolidVideo} from "react-icons/bi";
-
 const Home = () => {
   const { user } = useSelector(state => state.user);
   const [errMsg , setErrMsg] = useState('');
   const [file ,setFile] = useState(null);
-  const [isSubmitting , setIsSubmitting] = useState(false);
+  const [posting , setPosting] = useState(false);
+  const [loading , setLoading] = useState(false);
+
   const [friendRequest, setFriendRequest] = useState(requests);
   const [suggestedFriends, setSuggestedFriends] = useState(suggest);
   const {register , handleSubmit , formState:{ errors },} = useForm();
@@ -105,9 +106,28 @@ const Home = () => {
                   <BsFiletypeGif/>
                   <span>Gif</span>
               </label>
-              
+              <div>
+                {posting ? (
+                  <Loading />
+                ) :
+                 <CustomButton
+                  type='submit'
+                  title='Post'
+                  containerStyle='bg-[#0444a4] text-white py-1 px-6 rounded-full font-semibold text-sm'
+                />}
+              </div>
             </div>
           </form>
+
+          {loading ? (<Loading/>) : posts?.length > 0 ? (
+            posts?.map((post) => (
+              <PostCard key={post?._id} post ={post} user ={user} deletePost = {() => {}} likePost = {() => {}} />
+            ))
+          ) : (
+            <div className="flex w-full h-full items-center justify-center">
+              <p className="text-lg text-ascent-2">No Post Available</p>
+            </div>
+          )}
         </div>
         {/* RIGHT */}
         <div className="hidden w-1/4 h-full lg:flex flex-col gap-8 overflow-y-auto">
