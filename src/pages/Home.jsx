@@ -1,7 +1,7 @@
 import React from 'react'
 import { useState } from 'react';
 import { useSelector } from 'react-redux'
-import { TopBar, ProfileCard, FriendsCard, CustomButton, TextInput , Loading , PostCard } from '../components';
+import { TopBar, ProfileCard, FriendsCard, CustomButton, TextInput , Loading , PostCard, EditProfile } from '../components';
 import { friends, requests, suggest , posts } from '../assets/data';
 import { NoProfile } from '../assets';
 import { Link } from 'react-router-dom';
@@ -9,7 +9,7 @@ import { BsFiletypeGif, BsPersonFillAdd } from 'react-icons/bs';
 import { useForm } from "react-hook-form";
 import {BiImages, BiSolidVideo} from "react-icons/bi";
 const Home = () => {
-  const { user } = useSelector(state => state.user);
+  const { user , edit } = useSelector(state => state.user);
   const [errMsg , setErrMsg] = useState('');
   const [file ,setFile] = useState(null);
   const [posting , setPosting] = useState(false);
@@ -21,6 +21,7 @@ const Home = () => {
   const handlePostSubmit = async() => {};
 
   return (
+    <>
     <div className='home w-full px-0 lg:px-10 pb-20 2xl:px-40 bg-bgColor lg:rounded-lg h-screen overflow-hidden '>
 
       <TopBar />
@@ -197,9 +198,11 @@ const Home = () => {
           </div>
         </div>
       </div>
-
-
     </div>
+
+   { edit && <EditProfile />}
+    </>
+    
   )
 }
 
