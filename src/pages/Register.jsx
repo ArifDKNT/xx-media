@@ -9,6 +9,7 @@ import { BgImage } from '../assets';
 import { BsShare } from 'react-icons/bs';
 import { AiOutlineInteraction } from 'react-icons/ai';
 import { ImConnection } from 'react-icons/im';
+import { apiRequest } from '../utils';
 
 const Register = () => {
     const { register, handleSubmit, getValues, formState: { errors }, } = useForm({ mode: "onChange" });
@@ -16,7 +17,29 @@ const Register = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const dispatch = useDispatch();
     const onSubmit = async (data) => {
+        setIsSubmitting(true);
 
+        try {
+            const res = await apiRequest({
+                url: "/auth/register",
+                data: data,
+                method: "POST"
+            });
+
+            if (res?.status === "failed") {
+                setErrMsg(res);
+            } else {
+                setErrMsg(res);
+                setInterval(() => {
+                    window.location.replace("/login");
+                }, 5000)
+            }
+            setIsSubmitting(false);
+
+        } catch (error) {
+            console.log(error)
+            setIsSubmitting(false);
+        }
     }
 
     return (
@@ -79,35 +102,35 @@ const Register = () => {
                             error={errors.email ? errors.email.message : ""}
 
                         />
-                                                <div className="w-full flex flex-col lg:flex-row gap-1 md:gap-2">
+                        <div className="w-full flex flex-col lg:flex-row gap-1 md:gap-2">
 
-                        <TextInput
-                            name="password"
-                            placeholder="Password"
-                            label="Password"
-                            type="password"
-                            register={
-                                register("password", {
-                                    required: "Password is required"
-                                })
-                            }
-                            styles='w-full'
-                            labelStyle='ml-2'
-                            error={errors.password ? errors.password?.message : ""}
+                            <TextInput
+                                name="password"
+                                placeholder="Password"
+                                label="Password"
+                                type="password"
+                                register={
+                                    register("password", {
+                                        required: "Password is required"
+                                    })
+                                }
+                                styles='w-full'
+                                labelStyle='ml-2'
+                                error={errors.password ? errors.password?.message : ""}
 
-                        />
-                        <TextInput
-                            placeholder="Password"
-                            label="Confirm Password"
-                            type="password"
-                            register={register("cPassword", { validate: (value) => { const { password } = getValues(); if (password != value) { return "Passwords do not match !" } } })}
-                            styles='w-full'
-                            labelStyle='ml-2'
-                            error={errors.cPassword && errors.cPassword.type === "vallidate" ? errors.cPassword?.message : ""}
+                            />
+                            <TextInput
+                                placeholder="Password"
+                                label="Confirm Password"
+                                type="password"
+                                register={register("cPassword", { validate: (value) => { const { password } = getValues(); if (password != value) { return "Passwords do not match !" } } })}
+                                styles='w-full'
+                                labelStyle='ml-2'
+                                error={errors.cPassword && errors.cPassword.type === "vallidate" ? errors.cPassword?.message : ""}
 
-                        />
+                            />
                         </div>
-                       
+
 
                         {
                             errMsg?.message && (
