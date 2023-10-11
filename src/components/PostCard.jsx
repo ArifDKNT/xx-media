@@ -9,21 +9,34 @@ import TextInput from './TextInput';
 import Loading from './Loading';
 import CustomButton from './CustomButton';
 import { postComments } from '../assets/data';
+import { apiRequest } from '../utils';
 
+const getPostComments = async (id) => {
+    try {
+        const res = await apiRequest({
+            url: "/posts/comments/" + id,
+            method: "GET",
+        })
 
-const ReplyCard = ({reply , user , handleLike}) => {
-    return(
+        return res?.data;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+const ReplyCard = ({ reply, user, handleLike }) => {
+    return (
         <div className="w-full py-3">
-            
+
             <div className="flex gap-3 items-center mb-1">
                 <Link to={"/profile/" + reply?.userId?._id} >
 
-                    <img 
-                    src={reply?.userId?.profileUrl ?? NoProfile} 
-                    alt={reply?.userId?.firstName} 
-                    className='w-10 h-10 rounded-full object-cover' />
+                    <img
+                        src={reply?.userId?.profileUrl ?? NoProfile}
+                        alt={reply?.userId?.firstName}
+                        className='w-10 h-10 rounded-full object-cover' />
                 </Link>
-                
+
                 <div>
                     <Link to={"/profile/" + reply?.userId?._id} >
                         <p className='font-medium text-base text-ascent-1'>
@@ -56,18 +69,50 @@ const ReplyCard = ({reply , user , handleLike}) => {
         </div>
 
     )
-        
-    
+
+
 
 }
-
 
 const CommentForm = ({ user, id, replyAt, getComments }) => {
     const [loading, setLoading] = useState(false);
     const [errMsg, setErrMsg] = useState("");
     const { register, handleSubmit, reset, formState: { errors }, } = useForm({ mode: "onChange" });
 
-    const onSubmit = async (data) => { };
+    const onSubmit = async (data) => {
+        setLoading(true);
+        setErrMsg("");
+        try {
+            const URL = !replyAt ? "/posts/comment/" + id : "/posts/reply-comment/" + id;
+            const newData = {
+                comment : data?.comment,
+                from : user?.firstName + " " + user?.lastName,
+                replyAt : replyAt
+            };
+            const res = await apiRequest({
+                url:URL,
+                data : newData,
+                token: user?.token,
+                method:"POST",
+
+            });
+
+            if(res?.status === "failed"){
+                setErrMsg("");
+            }else{
+                reset({
+                    comment: ""
+                });
+                setErrMsg("");
+                await getComments(id);
+            }
+            setLoading(false)
+        } catch (error) {
+            console.log(error);
+            setLoading(false);
+        }
+
+    };
 
     return (
         <form className='w-full border-b border-[#66666645]' onSubmit={handleSubmit(onSubmit)}>
@@ -120,14 +165,18 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
     const [replyComments, setReplyComments] = useState(0);
     const [showComments, setShowComments] = useState(0);
 
-    const getComments = async () => {
-
+    const getComments = async (id) => {
         setReplyComments(0);
-        setComments(postComments);
+        const result = await getPostComments(id);
+        setComments(result);
         setLoading(false);
     };
 
-    const handleLike = () => {}
+    const handleLike = async (uri) => {
+        await likePost(uri);
+        await getComments(post?._id);
+    }
+
     return (
         <div className='mb-2 bg-primary p-4 rounded-xl'>
             <div className="flex gap-3 items-center mb-2">
@@ -167,7 +216,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
             </div>
 
             <div className='mt-4 flex justify-between items-center px-3 py-2 text-ascent-2 text-base border-t border-[#66666645]'>
-                <p className='flex gap-2 items-center text-base cursor-pointer'>
+                <p className='flex gap-2 items-center text-base cursor-pointer' onClick={() => handleLike("/posts/like/" + post?._id)}>
                     {post?.likes?.includes(user?._id) ? (
                         <BiSolidLike size={20} color='blue' />
                     ) : (<BiLike size={20} />)}
@@ -230,7 +279,7 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
                                     </p>
 
                                     <div className="mt-2 flex gap-6">
-                                        <p className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer' >
+                                        <p className='flex gap-2 items-center text-base text-ascent-2 cursor-pointer' onClick={() => { handleLike("posts/like-comment/"+ comment?._id)  }} >
                                             {comment?.likes?.includes(user?._id) ? (
                                                 <BiSolidLike size={20} color='blue' />
                                             ) : (
@@ -240,12 +289,12 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
                                             {comment?.likes?.length} Likes
                                         </p>
                                         <span className='text-blue cursor-pointer' onClick={() => setReplyComments(comment?._id)} >
-                                                Reply
+                                            Reply
                                         </span>
                                     </div>
 
                                     {replyComments === comment?._id && (
-                                        <CommentForm 
+                                        <CommentForm
                                             user={user}
                                             id={comment?._id}
                                             replyAt={comment?.from}
@@ -253,33 +302,34 @@ const PostCard = ({ post, user, deletePost, likePost }) => {
                                         />
                                     )}
                                 </div>
-                             {/**REPLIES*/}
+                                {/**REPLIES*/}
                                 <div className="py-2 px-8 mt-6">
                                     {comment?.replies?.length > 0 && (
                                         <p className='text-base text-ascent-1 cursor-pointer' onClick={() => {
-                                        setShowReply(
-                                            showReply === comment?.replies?._id ? 0 : comment?.replies?._id
-                                        )}}>
+                                            setShowReply(
+                                                showReply === comment?.replies?._id ? 0 : comment?.replies?._id
+                                            )
+                                        }}>
                                             Show Replies ({comment?.replies?.length})
                                         </p>
                                     )}
 
 
                                     {
-                                        showReply === comment?.replies?._id  && comment?.replies?.map((reply) => (
-                                            <ReplyCard 
+                                        showReply === comment?.replies?._id && comment?.replies?.map((reply) => (
+                                            <ReplyCard
                                                 reply={reply}
-                                                user ={user}
+                                                user={user}
                                                 key={reply?._id}
-                                                handleLike = {() => handleLike("/posts/like-comment" + comment?._id+ "/" + reply?._id)}
-                                            
-                                            
-                                            
+                                                handleLike={() => handleLike("/posts/like-comment/" + comment?._id + "/" + reply?._id)}
+
+
+
                                             />
                                         ))
                                     }
                                 </div>
-                                
+
                             </div>
                         ))
                     ) :

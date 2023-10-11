@@ -8,7 +8,8 @@ import { Link } from 'react-router-dom';
 import { BsFiletypeGif, BsPersonFillAdd } from 'react-icons/bs';
 import { useForm } from "react-hook-form";
 import {BiImages, BiSolidVideo} from "react-icons/bi";
-import { apiRequest, fetchPosts, handleFileUpload } from '../utils';
+import { apiRequest, fetchPosts, handleFileUpload, likePost , deletePost, sendFriendRequest, getUserInfo } from '../utils';
+import { UserLogin } from '../redux/userSlice';
 const Home = () => {
   const { user , edit } = useSelector(state => state.user);
   const {posts } = useSelector((state) => state.posts);
@@ -17,8 +18,8 @@ const Home = () => {
   const [posting , setPosting] = useState(false);
   const [loading , setLoading] = useState(false);
 
-  const [friendRequest, setFriendRequest] = useState(requests);
-  const [suggestedFriends, setSuggestedFriends] = useState(suggest);
+  const [friendRequest, setFriendRequest] = useState([]);
+  const [suggestedFriends, setSuggestedFriends] = useState([]);
   const {register , handleSubmit,reset, formState:{ errors },} = useForm();
   const dispatch = useDispatch();
   const handlePostSubmit = async(data) => {
@@ -59,31 +60,69 @@ const Home = () => {
     setLoading(false);
   };
 
-  const handleLikePost = async () => {
-
+  const handleLikePost = async (uri) => {
+    await likePost({uri : uri , token: user?.token });
+    await fetchPost();
   };
 
-  const handleDelete = () => {
+  const handleDelete = async (id) => {
+    await deletePost(id , user.token);
+    await fetchPost();
 
   };
 
   const fetchFriendRequests = async () => {
-
+    try {
+      const res = await apiRequest({
+        url : "/users/get-friend-request",
+        token: user?.token,
+        method : "POST",
+      })
+      setFriendRequest(res?.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   const fetchSuggestedFriends = async () => {
-
+    try {
+      const res = await apiRequest({
+        url : "/users/suggested-friends ",
+        token: user?.token,
+        method : "POST",
+      })
+      setSuggestedFriends(res?.data);
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const handlehFriendRequests = async () => {
-
+  const handleFriendRequest = async (id) => {
+    try {
+        const res = await sendFriendRequest(user.token , id);
+        await fetchSuggestedFriends();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
-  const acceptFriendRequests = async () => {
-
+  const acceptFriendRequests = async (id , status) => {
+      try {
+        const res = await apiRequest({
+          url: "users/accept-request",
+          token:user?.token,
+          method: "POST",
+          data : {rid : id , status}
+        });
+        setFriendRequest(res?.data);
+      } catch (error) {
+        
+      }
   };
   const getUser = async () => {
-
+    const res = await getUserInfo(user?.token);
+    const newData = {token : user?.token , ...res};
+    dispatch(UserLogin(newData));
   };
 
 useEffect(() => {
@@ -196,7 +235,7 @@ useEffect(() => {
 
           {loading ? (<Loading/>) : posts?.length > 0 ? (
             posts?.map((post) => (
-              <PostCard key={post?._id} post ={post} user ={user} deletePost = {() => {}} likePost = {() => {}} />
+              <PostCard key={post?._id} post ={post} user ={user} deletePost = {handleDelete} likePost = {handleLikePost} />
             ))
           ) : (
             <div className="flex w-full h-full items-center justify-center">
@@ -226,10 +265,12 @@ useEffect(() => {
 
                   <div className="flex gap-1">
                     <CustomButton
+                      onClick={() => {acceptFriendRequests(_id , "Accepted")}}
                       title={"Accept"}
                       containerStyle={'bg-[#0444a4] text-xs text-white px-1.5 py-1 rounded-full'}
                     />
                     <CustomButton
+                      onClick={() => {acceptFriendRequests(_id , "Denied")}}
                       title={"Deny"}
                       containerStyle={'bg-[#666] text-xs text-white px-1.5 py-1 rounded-full'}
                     />
@@ -258,7 +299,7 @@ useEffect(() => {
                     </Link>
 
                     <div className="flex gap-1">
-                      <button className='bg-[#0444a430] text-sm text-white p-1 rounded' onClick={() => {}}>
+                      <button className='bg-[#0444a430] text-sm text-white p-1 rounded' onClick={() => {handleFriendRequest(friend?._id)}}>
                       <BsPersonFillAdd size={20} className='text-[#0f52b6]' />
                       </button>
 

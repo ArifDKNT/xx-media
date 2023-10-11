@@ -20,7 +20,7 @@ export const apiRequest = async ({url , token , data , method}) => {
 
         return result?.data;
     } catch (error) {
-        const err = error.respinse.data;
+        const err = error.response.data;
         console.log(error);
         return { status : err.success , message : err.message}
     }   
