@@ -6,6 +6,8 @@ import TextInput from './TextInput';
 import Loading from './Loading';
 import CustomButton from './CustomButton';
 import { UpdateProfile } from '../redux/userSlice';
+import { apiRequest, handleFileUpload } from '../utils';
+import { UserLogin } from '../redux/userSlice';
 const EditProfile = () => {
 
     const { user } = useSelector((state) => state.user);
@@ -16,7 +18,47 @@ const EditProfile = () => {
 
     const { register, handleSubmit, formState: { errors }, } = useForm({ mode: "onChange", defaultValues: { ...user } })
 
-    const onSubmit = async (data) => { };
+    const onSubmit = async (data) => { 
+        setIsSubmitting(true);
+        setErrMsg("");
+        try {
+            const uri = picture && (await handleFileUpload(picture));
+            console.log("uri",uri)
+            const {firstName , lastName , location , profession} = data;
+
+            const res = await apiRequest({
+                url: "users/update-user",
+                data:{
+                    firstName,
+                    lastName,
+                    location,
+                    profession,
+                    profileUrl : uri ? uri : user?.profileUrl
+                },
+                method : "PUT",
+                token : user?.token,
+
+            });
+
+            if(res?.status === "failed"){
+                setErrMsg(res);
+            }else{
+                setErrMsg(res);
+                const newUser = { token : res?.token , ...res?.user};
+                dispatch(UserLogin(newUser));
+
+                setTimeout(() => {
+                    dispatch(UpdateProfile(false));
+                },3000);
+                setIsSubmitting(false);
+            }
+            setIsSubmitting(false);
+            
+        } catch (error) {
+            console.log(error);
+            setIsSubmitting(false);
+        }
+    };
     const handleClose = () => {
         dispatch(UpdateProfile(false));
 

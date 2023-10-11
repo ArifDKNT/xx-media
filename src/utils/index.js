@@ -28,17 +28,19 @@ export const apiRequest = async ({url , token , data , method}) => {
 
 export const handleFileUpload = async (uploadFile) => {
 
-    const fomrData = new FormData();
-    FormData.append("file",uploadFile);
-    fomrData.append("upload_preset" , "socialmedia");
+    const formData = new FormData();
+    formData.append("file",uploadFile);
+    formData.append("upload_preset" , "socialmedia");
 
     try {
-        const response = await axios.post(`https://api.cloudinary.com/v1_1/${process.env.REACT_APP_CLOUDINARY_ID}/image/upload/` , fomrData);
-        return response.data.secureUrl;
+        const response = await axios.post(`https://api.cloudinary.com/v1_1/dejures8g/upload` , formData);
+        console.log("response" , response)
+        return response.data.secure_url;
 
     } catch (error) {
         console.log(error);
     }
+    
 }
 
 export const fetchPosts = async (token , dispatch , uri , data) => {
