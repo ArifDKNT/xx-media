@@ -33,7 +33,7 @@ export const handleFileUpload = async (uploadFile) => {
     formData.append("upload_preset" , "socialmedia");
 
     try {
-        const response = await axios.post(`https://api.cloudinary.com/v1_1/dejures8g/upload` , formData);
+        const response = await axios.post(`https://api.cloudinary.com/v1_1/{cloudName}/upload` , formData);
         console.log("response" , response)
         return response.data.secure_url;
 
